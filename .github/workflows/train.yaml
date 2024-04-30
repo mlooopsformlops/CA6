@@ -11,6 +11,7 @@ jobs:
         run: dvc repro
       - name: Calculate and compare metrics
         run: |
+          git fetch --prune
           dvc metrics diff main > metrics_diff.txt  # Store diff output
           
           # Extract new and old accuracy (assuming accuracy is in metrics_diff.txt)
