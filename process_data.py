@@ -25,4 +25,3 @@ for col in non_numeric:
     df[col] = codes
 
 df.to_csv("data_processed.csv")
-
