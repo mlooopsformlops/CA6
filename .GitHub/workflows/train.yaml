@@ -1,0 +1,36 @@
+name: DVC Tracking with GitHub Actions
+on: [push]
+jobs:
+  build-and-test:  # Give the job a descriptive name
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Reproduce experiment
+        run: dvc repro
+      - name: Calculate and compare metrics
+        run: |
+          git fetch --prune
+          dvc metrics diff main > metrics_diff.txt  # Store diff output
+          
+          # Extract new and old accuracy (assuming accuracy is in metrics_diff.txt)
+          NEW_ACCURACY=$(grep "new accuracy" metrics_diff.txt | awk '{print $NF}')
+          OLD_ACCURACY=$(grep "old accuracy" metrics_diff.txt | awk '{print $NF}')
+
+          # Compare accuracy (adjust comparison logic if needed)
+          if (( $(echo "$NEW_ACCURACY > $OLD_ACCURACY" | bc -l) )); then
+            echo "New model has improved accuracy!"
+            # Add, commit, and push changes
+            git add .
+            git config --global user.email "your-email@example.com"
+            git config --global user.name "Your Name"
+            git commit -m "Improved model - accuracy increased"
+            git push origin $(git rev-parse --abbrev-ref HEAD)  # Push to current branch
+            
+            # (Optional) Create or update pull request to main
+            # You'll likely need a GitHub Personal Access Token for this
+            gh pr create --base main --title "Improved Model" --body "New model with better accuracy"
+          else
+            echo "New model does not show improvement."
+          fi
